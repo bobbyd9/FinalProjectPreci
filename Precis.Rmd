@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(readr)
+library(readxl)
 ```
 
 ##DATA
@@ -17,7 +17,9 @@ library(readr)
 ```{r}
 #I will be working with NBA data and looking into Gordan Haywards return to the Celtics and the kind of impact it may have on Wins, playoff/Championship chances ect. I am having trouble getting the CSV files, so I put in fake data top just have something. I should have the actual data soon from basketball-reference.com. 
 
-fakedata <- read_csv("elections-poll-ny01-1 copy.csv")
+haywardstats <- read_excel("GordanHaywardStats.xls")
 
+ghperseason <- haywardstats %>% 
+  head(n = 9) %>% write_rds(path = "shinygh")
 ```
 
