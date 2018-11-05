@@ -1,0 +1,12 @@
+name: GordanHaywardPoints
+title: GordanHaywardPoints
+username:
+account: bobbyd9
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 552485
+bundleId: 1681898
+url: https://bobbyd9.shinyapps.io/GordanHaywardPoints/
+when: 1541383080.43975
+asMultiple: FALSE
+asStatic: FALSE

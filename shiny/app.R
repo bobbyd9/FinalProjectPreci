@@ -14,11 +14,11 @@ ui <- fluidPage(
   # Application title
   titlePanel("Gordan Hayward Season Stats"),
   
-  # Sidebar with a drop-down menu to select a player on the team (this is currently serves no purpose, though)
+  # Sidebar that shows his stats with the different teams he is on. Dropdown Menu Currently doesnt actually change the data for some reason.
   sidebarLayout(
     sidebarPanel(
-      selectInput("season", "Season:", 
-                  choices=ghseasons$season)
+      selectInput("team", "Team:", 
+                  choices=ghseasons$tm)
     ),
     
     # Show a plot of the generated distribution
@@ -45,5 +45,7 @@ server <- function(input, output) {
   })
 }
 
+
+# Link to Publsihed app: https://bobbyd9.shinyapps.io/GordanHaywardPoints/
 # Run the application 
 shinyApp(ui = ui, server = server)
