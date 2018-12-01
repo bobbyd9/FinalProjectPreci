@@ -10,16 +10,63 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(readxl)
+library(janitor)
+library(reshape2)
 ```
 
-##DATA
 
 ```{r}
-#I will be working with NBA data and looking into Gordan Haywards return to the Celtics and the kind of impact it may have on Wins, playoff/Championship chances ect. I am having trouble getting the CSV files, so I put in fake data top just have something. I should have the actual data soon from basketball-reference.com. 
+#First I examined Gordan Hayward's season statistics by year.
+##I read in this data from Basketball Reference
 
-haywardstats <- read_excel("GordanHaywardStats.xls")
+haywardstats <- read_excel("gordanhaywardstats.xlsx")
 
+#I get rid of his career totals and clean the variable names
 ghperseason <- haywardstats %>% 
-  head(n = 9) %>% write_rds(path = "shinygh")
+  head(n = 9) %>% clean_names()
+
+#To make predictions on what he would have done if he didnt get hurt. We need his totals from the years he was at the jazz
+
+ghtotals <- read_excel("ghtotals.xlsx")
+
+#To predict thge kind of year Gordan Hayward would have had, I use the Simple Projection System (SPS) to calculate it.
+## More info in this system can be found here: https://www.basketball-reference.com/about/projections.html
+
+ghnoinjury <- ghtotals %>%
+  clean_names() %>% 
+  
+  #We only need the last three years before he got hurt to preform the prediciton
+  
+  slice(5:7) %>% 
+  
+  #Removing unneeded variables
+  select(-age, -tm, -lg, -g, -gs, -pos)
+
+  #Creating a dataframe to merge with my dataframe in order to calculate predicted totals using spefific weights for each of the previous seasons
+
+preweight <- data.frame(season = c("2014-15", "2015-16", "2016-17"), weights = c(6,3,1))
+
+#I Merge the two datasets together
+ghpredict <- merge(ghnoinjury, preweight)
+
+#Giving the following weights to all of his total stats: 2016-17 6 times multiplier, 2015-16 3 times multiplier and 2014-15 a 1 times multiplier
+
+ghpredict <-  ghpredict[, 2:24] * ghpredict[, 25]
+
+#I them add the three seasons together
+ghpredict <- ghpredict %>% 
+  adorn_totals()
+
+#The next step is to calculate a league average players stats playing the amount of minuetes as Hayward
+
+#First I read in Leaguewide averaged from each year and select the years I need
+
+leagueavg <- read_excel("leaguewide_averages.xlsx", skip = 1) %>%
+  slice(3:5) %>% 
+  clean_names() %>% 
+  select(-rk, -season, -lg, -ht, -wt, -age, -g, -pace, -e_fg_percent, -tov_percent, -orb_percent, -ft_fga, -o_rtg)
+
+leagueavg <- leagueavg[,2:19] / leagueavg[,1]
+
 ```
 
