@@ -97,9 +97,31 @@ leagueavg1$mp <- 26903
 
 leagueavg1 <- (leagueavg1 / 26903) * 1000
 
+#Cleaning stats to keep only ones I want.
+leagueavg1 <- leagueavg1 %>% 
+  select(-fg_percent, -x3p_percent, -ft_percent)
+
+ghpredict <- ghpredict %>% 
+  select(-fg_percent, -x3p_percent, -x2p_percent, -e_fg_percent, -ft_percent, -x2p, -x2pa)
+
 #I now calculate Hayward's projected per-36 minuete value
 ##This is what he would average if he played 36 minuetes per game. It is the regarded as the standard measure in a basketball game for a starter
 
-gordanfinalpred <- (ghpredict + leagueavg1)
+gordanfinalpred <- (ghpredict + leagueavg1) / (26903 + 1000) * 36
+
+#The last step for Hayward's Predicted Season would be to take into account his age. 
+
+##The age formula is (28 - age) *0.04 if the player is younger than 28, Hayward was 27
+
+gordanfinalpred <- gordanfinalpred * (1 + ((28-27) * 0.004))
+  #I calculate his shooting percentages by simply dividing makes by attempts
+
+gordanfinalpred <- mutate(gordanfinalpred, fg_percentage = fg/fga,
+    x3fg_percentage = x3p/x3pa,
+    ft_percentage = ft / fta)
+
+
+
+#This final dataset is Gordan Hayward's predicted stats for his first year on the Celtics without his injury.
 ```
 
