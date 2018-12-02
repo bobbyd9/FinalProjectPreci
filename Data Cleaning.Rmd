@@ -14,7 +14,6 @@ library(janitor)
 library(reshape2)
 ```
 
-
 ```{r}
 #First I examined Gordan Hayward's season statistics by year.
 ##I read in this data from Basketball Reference
@@ -57,6 +56,14 @@ ghpredict <-  ghpredict[, 2:24] * ghpredict[, 25]
 ghpredict <- ghpredict %>% 
   adorn_totals()
 
+#I take only the total values
+ghpredict <- ghpredict %>% 
+  slice(4)
+
+ghpredict$mp <- 26903
+  
+  
+
 #The next step is to calculate a league average players stats playing the amount of minuetes as Hayward
 
 #First I read in Leaguewide averaged from each year and select the years I need
@@ -66,7 +73,33 @@ leagueavg <- read_excel("leaguewide_averages.xlsx", skip = 1) %>%
   clean_names() %>% 
   select(-rk, -season, -lg, -ht, -wt, -age, -g, -pace, -e_fg_percent, -tov_percent, -orb_percent, -ft_fga, -o_rtg)
 
-leagueavg <- leagueavg[,2:19] / leagueavg[,1]
+# Dividing all the average statisitcs by minuetes played then multiplying by both the season weights we used before and Gordan Haywards Minutes
 
+lgavgmin <- leagueavg %>% 
+  select(mp)
+
+leagueavg1 <- leagueavg / lgavgmin$mp
+
+leagueavg1 <- leagueavg1 * preweight$weights
+
+leagueavg1 <- leagueavg1 * ghnoinjury$mp
+
+#I take the total from the three years
+
+leagueavg1 <- leagueavg1 %>% 
+  adorn_totals() %>% 
+  slice(4)
+
+leagueavg1$mp <- 26903
+
+#Now we scale this figure to 1000 minuetes
+##The 26,903 is the weighted total amount of minutes from Gordan Haywards three years prior to injury
+
+leagueavg1 <- (leagueavg1 / 26903) * 1000
+
+#I now calculate Hayward's projected per-36 minuete value
+##This is what he would average if he played 36 minuetes per game. It is the regarded as the standard measure in a basketball game for a starter
+
+gordanfinalpred <- (ghpredict + leagueavg1)
 ```
 
