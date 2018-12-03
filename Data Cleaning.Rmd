@@ -1,5 +1,5 @@
 ---
-title: "Preci"
+title: "Data Gathering and Cleaning"
 author: "Bobby Drysdale"
 date: "10/19/2018"
 output: html_document
@@ -13,7 +13,9 @@ library(readxl)
 library(janitor)
 library(reshape2)
 ```
+#All Data Cleaning and Manipulation
 
+##CounterFactual if Gordan Hayward didnt get hurt
 ```{r}
 #First I examined Gordan Hayward's season statistics by year.
 ##I read in this data from Basketball Reference
@@ -116,12 +118,69 @@ gordanfinalpred <- (ghpredict + leagueavg1) / (26903 + 1000) * 36
 gordanfinalpred <- gordanfinalpred * (1 + ((28-27) * 0.004))
   #I calculate his shooting percentages by simply dividing makes by attempts
 
-gordanfinalpred <- mutate(gordanfinalpred, fg_percentage = fg/fga,
-    x3fg_percentage = x3p/x3pa,
-    ft_percentage = ft / fta)
+gordanfinalpred <- mutate(gordanfinalpred, fg_percent = fg/fga,
+    x3p_percent = x3p/x3pa,
+    ft_percent = ft / fta)
 
 
 
 #This final dataset is Gordan Hayward's predicted stats for his first year on the Celtics without his injury.
+```
+
+##Looking at Gordan Hayward compared to other NBA Players
+
+```{r}
+#Before I start to calculate the metrics. I first decide what other players to look at. 
+
+##The first to are both the Predicted Gordan Hayward we just calculated and 2018-2019 Gordan Hayward that is in the middle of his season.
+
+###After that, I decided to choose the players who got an increase in playing time because of his injury, as well as several other NBA players for comparasion purposes.
+
+#First I read in the data of the other players we will be using
+
+allplayers <- read_excel("player_advmetrics.xlsx") %>% clean_names() %>% 
+  select(-x2p, -x2pa, -x2p_percent)
+
+#Adding the projected data for Gordan Hayward to the rest of the dataset
+
+allplayers <- bind_rows(allplayers, gordanfinalpred)
+
+#Rounding stats to look better
+
+allplayers[,c(-1,-2,-6,-9,-12)] <- round(allplayers[,c(-1,-2,-6,-9,-12)], 1)
+
+allplayers[,c(6,9,12)] <- round(allplayers[,c(6,9,12)], 3)
+
+#Fixing the NA from the Predicted dataset to show it is gordan hayward and his team
+
+allplayers$player[is.na(allplayers$player)] <- "Predicted Gordan Hayward"
+
+allplayers$tm[is.na(allplayers$tm)] <- "BOS"
+```
+
+##Looking into Advanced NBA Metrics
+
+```{r}
+#To Compare my Predicted Gordan Hayward to the other NBA players, we need to compute the advanced NBA Metrics
+
+##I will use formulas from several websites to make these calculations. The links to these websites will be provided as they are uses
+
+###First I will calculated percentages such as True shooting percentage. The formulas used can be found here: https://www.fromtherumbleseat.com/pages/advanced-basketball-statistics-formula-sheet
+
+gordanadv <- ghpredict %>% 
+  mutate(
+    poss = .5 * (fga + .475 * fta - orb + tov),
+    ts_percent = 15113 / (2 * (fga + .475 * fga)), 
+    orb_percent = orb / mp / (767+791) * 19805 / 5,
+    drb_percent = drb / mp / (2878+2804) * 19805 / 5,
+    trb_percent = trb / mp / (3645+3595) * 19805 / 5,
+    ast_percent = ast / (((mp / (19805 / 5)) * 3141) - fg),
+    stl_percent = stl / ((mp / (19805 / 5)) * 101.3),
+    blk_percent = blk / ((mp / (19805 / 5)) * (6973 - 2270)),
+    tov_percent = tov / (fga + .475 * fta + ast + tov)
+    
+    
+    
+  )
 ```
 
