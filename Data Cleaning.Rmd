@@ -167,8 +167,12 @@ allplayers$tm[is.na(allplayers$tm)] <- "BOS"
 
 ###First I will calculated percentages such as True shooting percentage. The formulas used can be found here: https://www.fromtherumbleseat.com/pages/advanced-basketball-statistics-formula-sheet
 
+#All the numbers come from Basketball References data on the Boston Celetics team statistics from 2017
+
+##While it would be better with a larger group of players to load in the data, for just one player prediction it is more time effective to just plug them in
+
 gordanadv <- ghpredict %>% 
-  mutate(
+  transmute(
     poss = .5 * (fga + .475 * fta - orb + tov),
     ts_percent = 15113 / (2 * (fga + .475 * fga)), 
     orb_percent = orb / mp / (767+791) * 19805 / 5,
@@ -177,10 +181,17 @@ gordanadv <- ghpredict %>%
     ast_percent = ast / (((mp / (19805 / 5)) * 3141) - fg),
     stl_percent = stl / ((mp / (19805 / 5)) * 101.3),
     blk_percent = blk / ((mp / (19805 / 5)) * (6973 - 2270)),
-    tov_percent = tov / (fga + .475 * fta + ast + tov)
-    
-    
-    
+    tov_percent = tov / (fga + .475 * fta + ast + tov),
+    usg_percent = 100 * ((fga + 0.44 * fta +tov) * (19805 / 5)) / (26903 * (6975 + 0.44 * 1697 + 1149)), 
+    x3par = x3pa / fga,
+    #League average of x3par
+    lg3par = 0.3368176539
   )
+
+#After these inital statistics are created. I go on to find teh measures that boil all these numbers into acouple numbers. 
+
+##The first I create is the Box Plus/Minus (BPM). Reading on the BPM can be found here: https://www.basketball-reference.com/about/bpm.html#vorp
+
+
 ```
 
