@@ -23,6 +23,7 @@ library(reshape2)
 haywardstats <- read_excel("gordanhaywardstats.xlsx")
 
 #I get rid of his career totals and clean the variable names
+
 ghperseason <- haywardstats %>% 
   head(n = 9) %>% clean_names()
 
@@ -41,6 +42,7 @@ ghnoinjury <- ghtotals %>%
   slice(5:7) %>% 
   
   #Removing unneeded variables
+  
   select(-age, -tm, -lg, -g, -gs, -pos)
 
   #Creating a dataframe to merge with my dataframe in order to calculate predicted totals using spefific weights for each of the previous seasons
@@ -48,6 +50,7 @@ ghnoinjury <- ghtotals %>%
 preweight <- data.frame(season = c("2014-15", "2015-16", "2016-17"), weights = c(6,3,1))
 
 #I Merge the two datasets together
+
 ghpredict <- merge(ghnoinjury, preweight)
 
 #Giving the following weights to all of his total stats: 2016-17 6 times multiplier, 2015-16 3 times multiplier and 2014-15 a 1 times multiplier
@@ -55,6 +58,7 @@ ghpredict <- merge(ghnoinjury, preweight)
 ghpredict <-  ghpredict[, 2:24] * ghpredict[, 25]
 
 #I them add the three seasons together
+
 ghpredict <- ghpredict %>% 
   adorn_totals()
 
@@ -64,8 +68,6 @@ ghpredict <- ghpredict %>%
 
 ghpredict$mp <- 26903
   
-  
-
 #The next step is to calculate a league average players stats playing the amount of minuetes as Hayward
 
 #First I read in Leaguewide averaged from each year and select the years I need
@@ -116,13 +118,21 @@ gordanfinalpred <- (ghpredict + leagueavg1) / (26903 + 1000) * 36
 ##The age formula is (28 - age) *0.04 if the player is younger than 28, Hayward was 27
 
 gordanfinalpred <- gordanfinalpred * (1 + ((28-27) * 0.004))
+
   #I calculate his shooting percentages by simply dividing makes by attempts
 
 gordanfinalpred <- mutate(gordanfinalpred, fg_percent = fg/fga,
     x3p_percent = x3p/x3pa,
     ft_percent = ft / fta)
 
+#Fixing the total stat predictions for Gordan Hayward to not have the the season sum. I do this by taking the 36 min projection and multiplying all stats except shooting percentages by 80 games 
 
+ghpredict2 <- gordanfinalpred[, 17:19]
+
+#
+ghpredict <- gordanfinalpred[, 1:16] * 80
+
+ghpredicttotals <- bind_cols(ghpredict, ghpredict2)
 
 #This final dataset is Gordan Hayward's predicted stats for his first year on the Celtics without his injury.
 ```
@@ -171,26 +181,66 @@ allplayers$tm[is.na(allplayers$tm)] <- "BOS"
 
 ##While it would be better with a larger group of players to load in the data, for just one player prediction it is more time effective to just plug them in
 
-gordanadv <- ghpredict %>% 
+gordanadv <- ghpredicttotals %>% 
   transmute(
-    poss = .5 * (fga + .475 * fta - orb + tov),
-    ts_percent = 15113 / (2 * (fga + .475 * fga)), 
+    poss = .96 * ((fga + tov + .44 * fta - orb)),
+    ts_percent = 1611 / (2 * (fga + .475 * fta)), 
     orb_percent = orb / mp / (767+791) * 19805 / 5,
     drb_percent = drb / mp / (2878+2804) * 19805 / 5,
     trb_percent = trb / mp / (3645+3595) * 19805 / 5,
     ast_percent = ast / (((mp / (19805 / 5)) * 3141) - fg),
-    stl_percent = stl / ((mp / (19805 / 5)) * 101.3),
+    stl_percent = stl / ((mp / (19805 / 5)) * 8503.4),
     blk_percent = blk / ((mp / (19805 / 5)) * (6973 - 2270)),
     tov_percent = tov / (fga + .475 * fta + ast + tov),
     usg_percent = 100 * ((fga + 0.44 * fta +tov) * (19805 / 5)) / (26903 * (6975 + 0.44 * 1697 + 1149)), 
     x3par = x3pa / fga,
+    
     #League average of x3par
-    lg3par = 0.3368176539
-  )
+    
+lg3par = 0.3368176539
+)
+
+gordanadv <- gordanadv %>% 
 
 #After these inital statistics are created. I go on to find teh measures that boil all these numbers into acouple numbers. 
 
 ##The first I create is the Box Plus/Minus (BPM). Reading on the BPM can be found here: https://www.basketball-reference.com/about/bpm.html#vorp
+
+mutate(
+  
+  #I am creating a team adjustment that is needed for the bpm calculation
+  
+#The numbers you see are coefficents used in the regressions from basketball references website
+  
+  tmrat = (7*1.2 - 1.615801)/5,
+   bpm = (0.123391 * 36) + (0.119597 * orb_percent) + (-0.151287 * drb_percent) + (1.255644 * stl_percent) + (0.531838 * blk_percent) + (-0.305868 * ast_percent) - (0.921292 * tov_percent * usg_percent) + (0.711217 * usg_percent * (1 - tov_percent) * (2 * (ts_percent - 0.52) + (0.017022 * ast_percent) + 0.297639 * (x3par - lg3par) - 0.213485) + 0.725930 * sqrt(ast_percent * trb_percent)) + tmrat,
+   obpm = (0.064448 * 36) + (0.211125 * orb_percent) + (-0.107545 * drb_percent) + (0.346513 * stl_percent) + (-0.052476 * blk_percent) + (-0.041787 * ast_percent) - (0.932965 * tov_percent * usg_percent) + (0.687359 * usg_percent * (1 - tov_percent) * (2 * (ts_percent - 0.52) + (0.007952 * ast_percent) + 0.374706 * (x3par - lg3par) + 0.181891) + 0.239862 * sqrt(ast_percent * trb_percent)) + tmrat,
+  dbpm = bpm - obpm,
+  
+  #Now I caclulate Value over Replacement PLayer. This takes the BPM and makes it into a estimation of the player's contribution to the team
+  
+  vorp = (bpm + 2) * 0.73 * .70 * (80/82),
+  
+  #The last advanced metrics to compute is win shares. We will do this both with Offensive, Defensive and total Wins shares.
+  ows = (ghpredicttotals$pts - (0.92 * 1.037 * gordanadv$poss)) / (0.32 * 106.3 * (96 / 97.3)),
+  
+  #Before I calculate Defensive winning percentage, other vaules need to be computed for the equation
+  ##Full explanations on the formulas and methodology can be found here: https://www.basketball-reference.com/about/ratings.html
+  
+  dfg = 0.4396959702,
+  dor = 0.215590079,
+  fmw = (dfg * (1 - dor)) / (dfg * (1 - dor) + (1 - dfg) * dor))
+
+gordanadv <- gordanadv %>% 
+  mutate(
+  stops1 = 170.6270162101,
+  stops2 = (3534 / 19805) * fmw * (1 - 1.07 * dor) + (555 / 19805) * 2891 + (159 / 1618) * 0.4 * 1748 * (1 - (1334 / 1748))^2,
+  stopsper = ((stops1 + stops2) * 19805) / (8470.6 * 2891),
+  drtg = 103.1 + 0.2 * (100 * 2.7198154631 * (1 - stopsper) - 103.1),
+  margd = (2891 / 19805) * 99.95 * (1.08 * (1.037) - ((drtg) / 100)),
+  dws = (margd) / (0.32 * 106.3 * (96 / 97.3)),
+  ws = ows + dws
+) %>% select(-dfg, -dor, -fmw, -stops1, -stops2, -stopsper, - drtg, -margd)
 
 
 ```
