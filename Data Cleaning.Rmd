@@ -17,6 +17,7 @@ library(reshape2)
 
 ##CounterFactual if Gordan Hayward didnt get hurt
 ```{r}
+
 #First I examined Gordan Hayward's season statistics by year.
 ##I read in this data from Basketball Reference
 
