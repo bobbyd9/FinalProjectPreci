@@ -14,7 +14,7 @@ library(shinythemes)
 
 #Reading in datasets
 
-advanced <- readRDS("advallplayers.rds") %>% 
+advanced <- readRDS("advallplayers.rds")
 
 #Distighising that this is Gordan Hayward of this year
 
