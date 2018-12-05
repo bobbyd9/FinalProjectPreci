@@ -149,24 +149,24 @@ ghpredicttotals <- bind_cols(ghpredict, ghpredict2)
 
 #First I read in the data of the other players we will be using
 
-allplayers <- read_excel("player_advmetrics.xlsx") %>% clean_names() %>% 
+allplayers <- read_excel("allplayer_stats.xlsx") %>% clean_names() %>% 
   select(-x2p, -x2pa, -x2p_percent)
 
 #Adding the projected data for Gordan Hayward to the rest of the dataset
 
-allplayers <- bind_rows(allplayers, gordanfinalpred)
+allplayersfinal <- bind_rows(allplayers, gordanfinalpred)
 
 #Rounding stats to look better
 
-allplayers[,c(-1,-2,-6,-9,-12)] <- round(allplayers[,c(-1,-2,-6,-9,-12)], 1)
+allplayersfinal[,c(-1,-2,-6,-9,-12)] <- round(allplayersfinal[,c(-1,-2,-6,-9,-12)], 1)
 
-allplayers[,c(6,9,12)] <- round(allplayers[,c(6,9,12)], 3)
+allplayersfinal[,c(6,9,12)] <- round(allplayersfinal[,c(6,9,12)], 3)
 
 #Fixing the NA from the Predicted dataset to show it is gordan hayward and his team
 
-allplayers$player[is.na(allplayers$player)] <- "Predicted Gordan Hayward"
+allplayersfinal$player[is.na(allplayersfinal$player)] <- "Predicted Gordan Hayward"
 
-allplayers$tm[is.na(allplayers$tm)] <- "BOS"
+allplayersfinal$tm[is.na(allplayersfinal$tm)] <- "BOS"
 ```
 
 ##Looking into Advanced NBA Metrics
@@ -241,8 +241,48 @@ gordanadv <- gordanadv %>%
   margd = (2891 / 19805) * 99.95 * (1.08 * (1.037) - ((drtg) / 100)),
   dws = (margd) / (0.32 * 106.3 * (96 / 97.3)),
   ws = ows + dws
-) %>% select(-dfg, -dor, -fmw, -stops1, -stops2, -stopsper, - drtg, -margd)
+) %>% select(-dfg, -dor, -fmw, -stops1, -stops2, -stopsper, - drtg, -margd, -poss, -x3par, -lg3par, -tmrat)
+
+#Adjusting percentages to get them in line with other dataset
+gordanadv[c(-1,-9,-10,-11,-12,-13,-14,-15,-16)] <- gordanadv[c(-1,-9,-10,-11,-12,-13,-14,-15,-16)] * 100
+
+gordanadv[9] <- gordanadv[9] * 10
+```
+
+##Gathering all datasets I want for shiny app
+
+```{r}
+#In this chunk, I unclutter my data enviroment to get only the final datasets I need
+
+#First is the dataset with per 36 min stats for both predicted Gordan Hayward and other players
+
+allplayersfinal <- allplayersfinal
+
+allplayersfinal %>% saveRDS("allplayers.rds")
+
+#The next dataset is all players with there advanced metrics
+
+#I first read in the other player's advanced stats
+
+otherplayersadv <- read_excel("player_advancedmetrics.xlsx") %>% clean_names()
+
+#Combining other players stats with the predicited Gordan Haywards
+
+advallplayers <- bind_rows(otherplayersadv, gordanadv)
+
+#Again adding information missing to the predicted  observation 
+
+advallplayers$player[is.na(advallplayers$player)] <- "Predicted Gordan Hayward"
+
+advallplayers$tm[is.na(advallplayers$tm)] <- "BOS"
+
+advallplayers$mp[is.na(advallplayers$mp)] <- "2891"
+
+advallplayers[,c(-1,-2,-3)] <- round(advallplayers[,c(-1,-2,-3)], 3)
+
+advallplayers[,c(-1,-2,-3,-4)] <- round(advallplayers[,c(-1,-2,-3,-4)], 1)
 
 
+advallplayers %>% saveRDS("advallplayers.rds")
 ```
 
