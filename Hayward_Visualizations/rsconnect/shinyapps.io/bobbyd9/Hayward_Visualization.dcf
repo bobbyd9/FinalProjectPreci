@@ -1,0 +1,12 @@
+name: Hayward_Visualization
+title: Hayward_Visualization
+username:
+account: bobbyd9
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 604599
+bundleId: 1741777
+url: https://bobbyd9.shinyapps.io/Hayward_Visualization/
+when: 1543995654.35976
+asMultiple: FALSE
+asStatic: FALSE
